@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Editor Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gray-800 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-video text-2xl text-blue-500"></i>
+                        <span class="ml-2 text-xl font-semibold">Video Editor</span>
+                    </div>
+                    <div class="hidden md:block ml-10">
+                        <div class="flex items-baseline space-x-4">
+                            <a href="/dashboard" class="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                            <a href="/assets" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Assets</a>
+                            <a href="/jobs" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
+                            <a href="/settings" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Settings</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8" x-data="dashboard()">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-white">Video Processing Dashboard</h1>
+            <p class="mt-2 text-gray-400">Process videos with custom intros, outros, and overlays</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-play-circle text-2xl text-green-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-400 truncate">Active Jobs</dt>
+                                <dd class="text-lg font-medium text-white" x-text="stats.activeJobs">0</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle text-2xl text-blue-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-400 truncate">Completed</dt>
+                                <dd class="text-lg font-medium text-white" x-text="stats.completedJobs">0</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-clock text-2xl text-yellow-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-400 truncate">Queue</dt>
+                                <dd class="text-lg font-medium text-white" x-text="stats.queuedJobs">0</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-2xl text-red-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-400 truncate">Failed</dt>
+                                <dd class="text-lg font-medium text-white" x-text="stats.failedJobs">0</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- New Job Form -->
+            <div class="lg:col-span-2">
+                <div class="bg-gray-800 shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-700">
+                        <h2 class="text-xl font-semibold">Create New Video Job</h2>
+                    </div>
+                    <div class="p-6">
+                        <form @submit.prevent="submitJob()">
+                            <div class="space-y-6">
+                                <!-- Video URL -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300">Video URL</label>
+                                    <input type="url" x-model="form.videoUrl" 
+                                           class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="https://example.com/video.mp4" required>
+                                </div>
+
+                                <!-- Customer Name -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300">Customer Name</label>
+                                    <input type="text" x-model="form.customerName" 
+                                           class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="Enter customer name" required>
+                                </div>
+
+                                <!-- Intro/Outro Selection -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300">Intro Clip</label>
+                                        <select x-model="form.introClip" 
+                                                class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value="">No intro</option>
+                                            <template x-for="intro in assets.intros" :key="intro.filename">
+                                                <option :value="intro.filename" x-text="intro.filename"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300">Outro Clip</label>
+                                        <select x-model="form.outroClip" 
+                                                class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value="">No outro</option>
+                                            <template x-for="outro in assets.outros" :key="outro.filename">
+                                                <option :value="outro.filename" x-text="outro.filename"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Transition Style -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300">Transition Style</label>
+                                    <select x-model="form.transitionStyle" 
+                                            class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="fade">Fade</option>
+                                        <option value="cut">Cut</option>
+                                        <option value="slide">Slide</option>
+                                    </select>
+                                </div>
+
+                                <!-- Encoding Preset -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300">Encoding Quality</label>
+                                    <select x-model="form.encodingPreset" 
+                                            class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="mobile">Mobile (720p, smaller file)</option>
+                                        <option value="standard">Standard (1080p, balanced)</option>
+                                        <option value="high">High (1080p, best quality)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <div>
+                                    <button type="submit" 
+                                            :disabled="isSubmitting"
+                                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <i class="fas fa-play mr-2" x-show="!isSubmitting"></i>
+                                        <i class="fas fa-spinner fa-spin mr-2" x-show="isSubmitting"></i>
+                                        <span x-text="isSubmitting ? 'Starting Job...' : 'Start Processing'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Jobs -->
+            <div>
+                <div class="bg-gray-800 shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-700">
+                        <h2 class="text-xl font-semibold">Recent Jobs</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4" x-show="recentJobs.length > 0">
+                            <template x-for="job in recentJobs" :key="job.job_id">
+                                <div class="border border-gray-600 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-medium" x-text="job.customer_name || 'Unknown'"></span>
+                                        <span :class="{
+                                            'bg-yellow-500': job.status === 'pending',
+                                            'bg-blue-500': job.status === 'processing',
+                                            'bg-green-500': job.status === 'completed',
+                                            'bg-red-500': job.status === 'failed'
+                                        }" class="px-2 py-1 text-xs rounded-full text-white" x-text="job.status"></span>
+                                    </div>
+                                    
+                                    <div x-show="job.status === 'processing'" class="mb-2">
+                                        <div class="w-full bg-gray-700 rounded-full h-2">
+                                            <div class="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                                                 :style="`width: ${(job.progress || 0) * 100}%`"></div>
+                                        </div>
+                                        <p class="text-xs text-gray-400 mt-1" x-text="job.message || 'Processing...'"></p>
+                                    </div>
+                                    
+                                    <div class="text-xs text-gray-500" x-text="'Job ID: ' + job.job_id.substring(0, 8) + '...'"></div>
+                                    
+                                    <div x-show="job.status === 'completed'" class="mt-2">
+                                        <a :href="job.result_url" class="text-blue-400 hover:text-blue-300 text-sm">
+                                            <i class="fas fa-download mr-1"></i>Download
+                                        </a>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <div x-show="recentJobs.length === 0" class="text-center py-8 text-gray-400">
+                            <i class="fas fa-inbox text-3xl mb-2"></i>
+                            <p>No recent jobs</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div x-show="alert.show" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform translate-y-2"
+             class="fixed bottom-4 right-4 max-w-sm w-full bg-gray-800 border rounded-lg shadow-lg z-50"
+             :class="{
+                'border-green-500': alert.type === 'success',
+                'border-red-500': alert.type === 'error',
+                'border-yellow-500': alert.type === 'warning',
+                'border-blue-500': alert.type === 'info'
+             }">
+            <div class="p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i :class="{
+                            'fas fa-check-circle text-green-500': alert.type === 'success',
+                            'fas fa-exclamation-circle text-red-500': alert.type === 'error',
+                            'fas fa-exclamation-triangle text-yellow-500': alert.type === 'warning',
+                            'fas fa-info-circle text-blue-500': alert.type === 'info'
+                        }"></i>
+                    </div>
+                    <div class="ml-3 w-0 flex-1 pt-0.5">
+                        <p class="text-sm font-medium text-white" x-text="alert.message"></p>
+                    </div>
+                    <div class="ml-4 flex-shrink-0 flex">
+                        <button @click="alert.show = false" class="text-gray-400 hover:text-gray-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function dashboard() {
+            return {
+                form: {
+                    videoUrl: '',
+                    customerName: '',
+                    introClip: '',
+                    outroClip: '',
+                    transitionStyle: 'fade',
+                    encodingPreset: 'standard'
+                },
+                assets: {
+                    intros: [],
+                    outros: [],
+                    logos: []
+                },
+                recentJobs: [],
+                stats: {
+                    activeJobs: 0,
+                    completedJobs: 0,
+                    queuedJobs: 0,
+                    failedJobs: 0
+                },
+                isSubmitting: false,
+                alert: {
+                    show: false,
+                    type: 'info',
+                    message: ''
+                },
+                jobPollingInterval: null,
+
+                async init() {
+                    await this.loadAssets();
+                    await this.loadRecentJobs();
+                    this.startJobPolling();
+                },
+
+                async loadAssets() {
+                    try {
+                        const [introsRes, outrosRes, logosRes] = await Promise.all([
+                            fetch('/api/assets/intros'),
+                            fetch('/api/assets/outros'),
+                            fetch('/api/assets/logos')
+                        ]);
+
+                        if (introsRes.ok) {
+                            const introsData = await introsRes.json();
+                            this.assets.intros = introsData.assets || [];
+                        }
+
+                        if (outrosRes.ok) {
+                            const outrosData = await outrosRes.json();
+                            this.assets.outros = outrosData.assets || [];
+                        }
+
+                        if (logosRes.ok) {
+                            const logosData = await logosRes.json();
+                            this.assets.logos = logosData.assets || [];
+                        }
+                    } catch (error) {
+                        console.error('Failed to load assets:', error);
+                    }
+                },
+
+                async loadRecentJobs() {
+                    try {
+                        // This would need to be implemented in the backend
+                        // For now, just initialize empty array
+                        this.recentJobs = [];
+                    } catch (error) {
+                        console.error('Failed to load recent jobs:', error);
+                    }
+                },
+
+                async submitJob() {
+                    if (this.isSubmitting) return;
+                    
+                    this.isSubmitting = true;
+                    
+                    try {
+                        const response = await fetch('/api/v1/process', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                video_url: this.form.videoUrl,
+                                customer_name: this.form.customerName,
+                                intro_clip: this.form.introClip || null,
+                                outro_clip: this.form.outroClip || null,
+                                transition_style: this.form.transitionStyle,
+                                encoding_preset: this.form.encodingPreset
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            this.showAlert('success', `Job started successfully! ID: ${data.job_id.substring(0, 8)}...`);
+                            
+                            // Add to recent jobs
+                            this.recentJobs.unshift({
+                                job_id: data.job_id,
+                                customer_name: this.form.customerName,
+                                status: 'pending',
+                                progress: 0,
+                                message: 'Job queued for processing',
+                                created_at: new Date().toISOString()
+                            });
+
+                            // Reset form
+                            this.form = {
+                                videoUrl: '',
+                                customerName: '',
+                                introClip: '',
+                                outroClip: '',
+                                transitionStyle: 'fade',
+                                encodingPreset: 'standard'
+                            };
+                        } else {
+                            this.showAlert('error', data.detail || 'Failed to start job');
+                        }
+                    } catch (error) {
+                        console.error('Submit error:', error);
+                        this.showAlert('error', 'Network error occurred');
+                    } finally {
+                        this.isSubmitting = false;
+                    }
+                },
+
+                startJobPolling() {
+                    // Poll for job updates every 5 seconds
+                    this.jobPollingInterval = setInterval(async () => {
+                        await this.updateJobStatuses();
+                    }, 5000);
+                },
+
+                async updateJobStatuses() {
+                    const activeJobs = this.recentJobs.filter(job => 
+                        job.status === 'pending' || job.status === 'processing'
+                    );
+
+                    for (const job of activeJobs) {
+                        try {
+                            const response = await fetch(`/api/job-status/${job.job_id}`);
+                            if (response.ok) {
+                                const updatedJob = await response.json();
+                                const index = this.recentJobs.findIndex(j => j.job_id === job.job_id);
+                                if (index !== -1) {
+                                    this.recentJobs[index] = { ...this.recentJobs[index], ...updatedJob };
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Failed to update job ${job.job_id}:`, error);
+                        }
+                    }
+
+                    // Update stats
+                    this.updateStats();
+                },
+
+                updateStats() {
+                    this.stats = {
+                        activeJobs: this.recentJobs.filter(j => j.status === 'processing').length,
+                        completedJobs: this.recentJobs.filter(j => j.status === 'completed').length,
+                        queuedJobs: this.recentJobs.filter(j => j.status === 'pending').length,
+                        failedJobs: this.recentJobs.filter(j => j.status === 'failed').length
+                    };
+                },
+
+                showAlert(type, message) {
+                    this.alert = { show: true, type, message };
+                    setTimeout(() => {
+                        this.alert.show = false;
+                    }, 5000);
+                },
+
+                destroy() {
+                    if (this.jobPollingInterval) {
+                        clearInterval(this.jobPollingInterval);
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>
